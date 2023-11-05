@@ -12,6 +12,7 @@ It provides:
 - each digit (whole number and decimal) occupies 1 byte
 - support for repeating decimals
 
+
 ## Usage
 
 ```go
