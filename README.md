@@ -94,6 +94,8 @@ func main() {
 
 ```
 
+TODO: docs
+
 In the addition operation of two numbers, the sign of each addend is important. To reduce complexity and simplify the code, the replacement of addends is used in cases where addition is actually subtraction over zero.
 
 The sign in addition is the sign of the larger addend (abs).
