@@ -312,10 +312,8 @@ func TestMul(t *testing.T) {
 		expectedStr := c.expectedMul
 
 		n3 := bigfloat.BigFloat{}
-		_, err = n3.Mul(n1, n2)
-		if err == nil {
-			result = n3.String()
-		}
+		n3.Mul(n1, n2)
+		result = n3.String()
 
 		fmt.Printf("%v\n", result)
 		printResult(t, result, expectedStr, err)
@@ -387,6 +385,7 @@ func TestTrunc(t *testing.T) {
 		{"-123.45", 2, "-123.00", false},
 		{"-123.45", 3, "-123.000", false},
 		{"-0.45", 3, "0.000", false},
+		{"-0.18", 2, "0.00", false},
 	}
 	fmt.Printf("\nTestTrunc...\n")
 	for _, c := range cases {
@@ -435,7 +434,7 @@ func TestMulInt64(t *testing.T) {
 			continue
 		}
 
-		_, err = n.MulInt64(c.param2)
+		n.MulInt64(c.param2)
 		result := n.String()
 		expectedStr := c.expected
 
@@ -855,6 +854,30 @@ func TestSetInt64(t *testing.T) {
 	for _, c := range cases {
 		fmt.Printf("SetInt64(%v) = ", c.param)
 		n1 := bigfloat.SetInt64(c.param)
+
+		expectedStr := c.expected
+		result := n1.String()
+
+		fmt.Printf("%v\n", result)
+		printResult(t, result, expectedStr, nil)
+	}
+}
+
+func TestSetInt(t *testing.T) {
+	var cases = []struct {
+		param    int
+		expected string
+	}{
+		{-800, "-800"},
+		{-80001e2, "-8000100"},
+		{0, "0"},
+		{-0, "0"},
+		{-0e5, "0"},
+	}
+	fmt.Printf("\nTestSetInt64...\n")
+	for _, c := range cases {
+		fmt.Printf("SetInt(%v) = ", c.param)
+		n1 := bigfloat.SetInt(c.param)
 
 		expectedStr := c.expected
 		result := n1.String()

@@ -188,11 +188,11 @@ func (f *BigFloat) SetString(s string) error {
 /*
 Create new BigFLoat number from string
 */
-func SetString(s string) (BigFloat, error) {
+func SetString(s string) (*BigFloat, error) {
 	f := &BigFloat{}
 	err := f.SetString(s)
 
-	return *f, err
+	return f, err
 }
 
 /*
@@ -472,27 +472,27 @@ func (f *BigFloat) divmod(a, b, remainder *BigFloat, bTrunc bool, options ...Div
 	return f, repeatDecimals, nil
 }
 
-func (f *BigFloat) Mul(a, b *BigFloat) (*BigFloat, error) {
+func (f *BigFloat) Mul(a, b *BigFloat) *BigFloat {
 	if a.IsInt64(0) || b.IsInt64(0) { // check for 0
 		newDecimals := maxInt(a.analysis.Decimals, b.analysis.Decimals)
 
-		return f.SetInt64(0).SetDecimals(newDecimals), nil // result is 0
+		return f.SetInt64(0).SetDecimals(newDecimals) // result is 0
 	} else if a.IsInt64(1) { // if 1st operand is 1 then result is 2nd operand
 		f.analysis = b.analysis
 
-		return f, nil
+		return f
 	} else if a.IsInt64(-1) { // if 1st operand is -1 then result is negative 2nd operand
 		f.analysis = b.analysis
 
-		return f.Neg(), nil
+		return f.Neg()
 	} else if b.IsInt64(1) { // if 2nd operand is 1 then result is 1st operand
 		f.analysis = a.analysis
 
-		return f, nil
+		return f
 	} else if b.IsInt64(-1) { // if 2nd operand is -1 then result is negative 1st operand
 		f.analysis = a.analysis
 
-		return f.Neg(), nil
+		return f.Neg()
 	}
 
 	var r, overflow int        // running multiplication result
@@ -572,7 +572,7 @@ func (f *BigFloat) Mul(a, b *BigFloat) (*BigFloat, error) {
 		Sign:     a.analysis.Sign * b.analysis.Sign,
 	}
 
-	return f, nil
+	return f
 }
 
 /*
@@ -606,22 +606,22 @@ func (f *BigFloat) Frac() *BigFloat {
 /*
 Multiply BigFloat with int64
 */
-func (f *BigFloat) MulInt64(n int64) (*BigFloat, error) {
+func (f *BigFloat) MulInt64(n int64) *BigFloat {
 	if n == 0 { // result is 0 with a predefined number of decimals
 		f.analysis.Sign = 1
 		f.analysis.Norm = fill(f.analysis.Decimals+1, '0')
 		f.analysis.Len = f.analysis.Decimals + 1
 
-		return f, nil
+		return f
 	} else if n == 1 { // same BigFloat as result
 
-		return f, nil
+		return f
 	} else if n == -1 { // for -1 result is opposite sign except for 0
 		if !f.IsInt64(0) {
 			f.analysis.Sign *= -1
 		}
 
-		return f, nil
+		return f
 	}
 
 	nStr := strconv.FormatInt(n, 10) // check if n is a multiple of 10
@@ -672,6 +672,7 @@ Set target decimals
 func (f *BigFloat) SetDecimals(n int) *BigFloat {
 
 	if n == f.analysis.Decimals { // no need to change
+		f.Sign(f.analysis.Sign) // checks negative sign for 0 e.g. (-0.1).SetDecimals(0) => 0
 		return f
 	} else if n > f.analysis.Decimals { // need to add zeroes
 		zeroes := fill(n-f.analysis.Decimals, '0')
@@ -1016,7 +1017,7 @@ func (f *BigFloat) Pow10(n int) (*BigFloat, error) {
 /*
 Multiply BigFloat number with 10 multiplicator
 */
-func (f *BigFloat) Mul10(n int) (*BigFloat, error) {
+func (f *BigFloat) Mul10(n int) *BigFloat {
 	if (f.analysis.Decimals - n) > 0 { // if there is enough decimals for multiplication
 		f.analysis.Decimals -= n // just fix decimals
 	} else {
@@ -1041,13 +1042,13 @@ func (f *BigFloat) Mul10(n int) (*BigFloat, error) {
 
 	}
 
-	return f, nil
+	return f
 }
 
 /*
 Divides BigFloat number with 10 multiplicator
 */
-func (f *BigFloat) Div10(n int) (*BigFloat, error) {
+func (f *BigFloat) Div10(n int) *BigFloat {
 	if (f.analysis.Decimals + n) >= f.analysis.Len { // need to prepend zeroes
 		zeroes := fill(n-(f.analysis.Len-f.analysis.Decimals)+1, '0')
 		f.analysis.Norm = append(zeroes, f.analysis.Norm...)
@@ -1055,7 +1056,7 @@ func (f *BigFloat) Div10(n int) (*BigFloat, error) {
 	}
 	f.analysis.Decimals += n
 
-	return f, nil
+	return f
 }
 
 /*
@@ -1074,6 +1075,14 @@ Creates new BigFloat number from int64 number
 func SetInt64(n int64) *BigFloat {
 	f := &BigFloat{}
 	return f.SetInt64(n)
+}
+
+/*
+Creates new BigFloat number from int number
+*/
+func SetInt(n int) *BigFloat {
+	f := &BigFloat{}
+	return f.SetInt64(int64(n))
 }
 
 type StringOption func(*stringOptionType)
