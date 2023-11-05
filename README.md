@@ -2,6 +2,8 @@
 
 BigFloat implements multi-precision floating-point numbers.
 
+[![codecov](https://codecov.io/gh/tihomirmagdic/bigfloat/graph/badge.svg?token=PTXHUP5GKZ)](https://codecov.io/gh/tihomirmagdic/bigfloat)
+
 It provides:
 - addition, subtraction, multiplication, division (float and integer with modulus)
 - rounding
@@ -11,7 +13,6 @@ It provides:
 - automatic precision
 - each digit (whole number and decimal) occupies 1 byte
 - support for repeating decimals
-
 
 ## Usage
 
