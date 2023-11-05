@@ -84,11 +84,11 @@ func main() {
 	fmt.Printf("divmod(%v, %v) = %v, remainder: %v\n", n1.String(), n2.String(), n3.String(), remainder.String())
 	// divmod(23.85, -11.01) = -2, remainder: 1.8300
 
-  _, rd, _ = n3.Div(bigfloat.SetInt(1), bigfloat.SetInt(12))
-  fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd))
+	_, rd, _ = n3.Div(bigfloat.SetInt(1), bigfloat.SetInt(12))
+	fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd))
 	// 1 / 12 = 0.08(3)
 
-  fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd, bigfloat.WithRepeatingOptions("r", "")))
+	fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd, bigfloat.WithRepeatingOptions("r", "")))
 	// 1 / 12 = 0.08r3
 }
 
