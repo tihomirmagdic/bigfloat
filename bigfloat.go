@@ -1101,7 +1101,15 @@ func ForceSign(forceSign bool) StringOption {
 Returns string
 Optional arg is forceSign for 0 or positive number to force '+' sign
 */
-func (f *BigFloat) String(options ...StringOption) string {
+func (f *BigFloat) String() string {
+	return f.StringWith(ForceSign(false))
+}
+
+/*
+Returns string with formatting options:
+-forceSign bool - if true then forces '+' sign for positive numbers
+*/
+func (f *BigFloat) StringWith(options ...StringOption) string {
 	so := stringOptionType{
 		forceSign: false,
 	}
@@ -1114,7 +1122,7 @@ func (f *BigFloat) String(options ...StringOption) string {
 
 	if f.analysis.Sign == -1 {
 		fmt.Fprintf(&b, "%c", '-')
-	} else if so.forceSign {
+	} else if so.forceSign && !f.IsInt64(0) {
 		fmt.Fprintf(&b, "%c", '+')
 	}
 
@@ -1148,7 +1156,7 @@ func StringWithRepeatingDecimals(f *BigFloat, RepeatingDecimals int, options ...
 		}
 	}
 
-	result := f.String(soptions...)
+	result := f.StringWith(soptions...)
 
 	if RepeatingDecimals > 0 {
 		var b strings.Builder
