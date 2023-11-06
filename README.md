@@ -30,68 +30,54 @@ func main() {
 	n3 := &bigfloat.BigFloat{}
 
 	n3.Add(n1, n2)
-	fmt.Printf("%v + %v = %v\n", n1.String(), n2.String(), n3.String())
-	// 7.005 + 4 = 11.005
+	fmt.Printf("%v + %v = %v\n", n1, n2, n3)
 
 	n3.Sub(n1, n2)
-	fmt.Printf("%v - %v = %v\n", n1.String(), n2.String(), n3.String())
-	// 7.005 - 4 = 3.005
+	fmt.Printf("%v - %v = %v\n", n1, n2, n3)
 
 	n3.Mul(n1, n2)
-	fmt.Printf("%v * %v = %v\n", n1.String(), n2.String(), n3.String())
-	// 7.005 * 4 = 28.020
+	fmt.Printf("%v * %v = %v\n", n1, n2, n3)
 
 	n3.Div(n1, n2)
-	fmt.Printf("%v / %v = %v\n", n1.String(), n2.String(), n3.String())
-	// 7.005 / 4 = 1.75125
+	fmt.Printf("%v / %v = %v\n", n1, n2, n3)
 
 	d := 4
-	fmt.Printf("round(%v, %v) = %v\n", n3.String(), d, n3.Round(d).String())
-	// round(1.75125, 4) = 1.75130
+	fmt.Printf("round(%v, %v) = %v\n", n3, d, n3.Round(d))
 
 	a := -2
 	b := 11
 
 	n3.Div(bigfloat.SetInt(a), bigfloat.SetInt(b), bigfloat.WithDivDecimalPlaces(10))
-	fmt.Printf("%v / %v = %v\n", a, b, n3.String())
-	// -2 / 11 = -0.1818181818
+	fmt.Printf("%v / %v = %v\n", a, b, n3)
 
 	_, rd, _ := n3.Div(bigfloat.SetInt(a), bigfloat.SetInt(b))
 	fmt.Printf("%v / %v = %v\n", a, b, bigfloat.StringWithRepeatingDecimals(n3, rd))
-	// -2 / 11 = -0.(18)
 
-	fmt.Printf("trunc(%v) = ", n3.String())
+	fmt.Printf("trunc(%v) = ", n3)
 	n3.Trunc()
-	fmt.Printf("%v\n", n3.String())
-	// trunc(-0.18) = 0.00
+	fmt.Printf("%v\n", n3)
 
 	a = 1
 	n1 = bigfloat.SetInt(a).Div10(2)
 	b = 3
 
 	_, rd, _ = n3.Div(n1, bigfloat.SetInt(b))
-	fmt.Printf("%v / %v = %v\n", n1.String(), b, bigfloat.StringWithRepeatingDecimals(n3, rd))
-	// 0.01 / 3 = 0.00(3)
+	fmt.Printf("%v / %v = %v\n", n1, b, bigfloat.StringWithRepeatingDecimals(n3, rd))
 
 	a = 23
 	b = -11
 
 	_, remainder, _ := n3.DivMod(bigfloat.SetInt(a), bigfloat.SetInt(b))
-	fmt.Printf("divmod(%v, %v) = %v, remainder: %v\n", a, b, n3.String(), remainder.String())
-	// divmod(23, -11) = -2, remainder: 1
+	fmt.Printf("divmod(%v, %v) = %v, remainder: %v\n", a, b, n3, remainder)
 
 	n1.SetString("23.85")
 	n2.SetString("-11.01")
 	_, remainder, _ = n3.DivMod(n1, n2)
-	fmt.Printf("divmod(%v, %v) = %v, remainder: %v\n", n1.String(), n2.String(), n3.String(), remainder.String())
-	// divmod(23.85, -11.01) = -2, remainder: 1.8300
+	fmt.Printf("divmod(%v, %v) = %v, remainder: %v\n", n1, n2, n3, remainder)
 
 	_, rd, _ = n3.Div(bigfloat.SetInt(1), bigfloat.SetInt(12))
 	fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd))
-	// 1 / 12 = 0.08(3)
-
 	fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd, bigfloat.WithRepeatingOptions("r", "")))
-	// 1 / 12 = 0.08r3
 }
 
 ```
