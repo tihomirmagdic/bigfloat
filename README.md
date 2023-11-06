@@ -79,7 +79,6 @@ func main() {
 	fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd))
 	fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd, bigfloat.WithRepeatingOptions("r", "")))
 }
-
 ```
 
 TODO: docs
