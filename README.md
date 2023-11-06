@@ -20,64 +20,64 @@ It provides:
 package main
 
 import (
-	"bigfloat"
-	"fmt"
+  "bigfloat"
+  "fmt"
 )
 
 func main() {
-	n1, _ := bigfloat.SetString("7.005")
-	n2 := bigfloat.SetInt64(4)
-	n3 := &bigfloat.BigFloat{}
+  n1, _ := bigfloat.SetString("7.005")
+  n2 := bigfloat.SetInt64(4)
+  n3 := &bigfloat.BigFloat{}
 
-	n3.Add(n1, n2)
-	fmt.Printf("%v + %v = %v\n", n1, n2, n3)
+  n3.Add(n1, n2)
+  fmt.Printf("%v + %v = %v\n", n1, n2, n3)
 
-	n3.Sub(n1, n2)
-	fmt.Printf("%v - %v = %v\n", n1, n2, n3)
+  n3.Sub(n1, n2)
+  fmt.Printf("%v - %v = %v\n", n1, n2, n3)
 
-	n3.Mul(n1, n2)
-	fmt.Printf("%v * %v = %v\n", n1, n2, n3)
+  n3.Mul(n1, n2)
+  fmt.Printf("%v * %v = %v\n", n1, n2, n3)
 
-	n3.Div(n1, n2)
-	fmt.Printf("%v / %v = %v\n", n1, n2, n3)
+  n3.Div(n1, n2)
+  fmt.Printf("%v / %v = %v\n", n1, n2, n3)
 
-	d := 4
-	fmt.Printf("round(%v, %v) = %v\n", n3, d, n3.Round(d))
+  d := 4
+  fmt.Printf("round(%v, %v) = %v\n", n3, d, n3.Round(d))
 
-	a := -2
-	b := 11
+  a := -2
+  b := 11
 
-	n3.Div(bigfloat.SetInt(a), bigfloat.SetInt(b), bigfloat.WithDivDecimalPlaces(10))
-	fmt.Printf("%v / %v = %v\n", a, b, n3)
+  n3.Div(bigfloat.SetInt(a), bigfloat.SetInt(b), bigfloat.WithDivDecimalPlaces(10))
+  fmt.Printf("%v / %v = %v\n", a, b, n3)
 
-	_, rd, _ := n3.Div(bigfloat.SetInt(a), bigfloat.SetInt(b))
-	fmt.Printf("%v / %v = %v\n", a, b, bigfloat.StringWithRepeatingDecimals(n3, rd))
+  _, rd, _ := n3.Div(bigfloat.SetInt(a), bigfloat.SetInt(b))
+  fmt.Printf("%v / %v = %v\n", a, b, bigfloat.StringWithRepeatingDecimals(n3, rd))
 
-	fmt.Printf("trunc(%v) = ", n3)
-	n3.Trunc()
-	fmt.Printf("%v\n", n3)
+  fmt.Printf("trunc(%v) = ", n3)
+  n3.Trunc()
+  fmt.Printf("%v\n", n3)
 
-	a = 1
-	n1 = bigfloat.SetInt(a).Div10(2)
-	b = 3
+  a = 1
+  n1 = bigfloat.SetInt(a).Div10(2)
+  b = 3
 
-	_, rd, _ = n3.Div(n1, bigfloat.SetInt(b))
-	fmt.Printf("%v / %v = %v\n", n1, b, bigfloat.StringWithRepeatingDecimals(n3, rd))
+  _, rd, _ = n3.Div(n1, bigfloat.SetInt(b))
+  fmt.Printf("%v / %v = %v\n", n1, b, bigfloat.StringWithRepeatingDecimals(n3, rd))
 
-	a = 23
-	b = -11
+  a = 23
+  b = -11
 
-	_, remainder, _ := n3.DivMod(bigfloat.SetInt(a), bigfloat.SetInt(b))
-	fmt.Printf("divmod(%v, %v) = %v, remainder: %v\n", a, b, n3, remainder)
+  _, remainder, _ := n3.DivMod(bigfloat.SetInt(a), bigfloat.SetInt(b))
+  fmt.Printf("divmod(%v, %v) = %v, remainder: %v\n", a, b, n3, remainder)
 
-	n1.SetString("23.85")
-	n2.SetString("-11.01")
-	_, remainder, _ = n3.DivMod(n1, n2)
-	fmt.Printf("divmod(%v, %v) = %v, remainder: %v\n", n1, n2, n3, remainder)
+  n1.SetString("23.85")
+  n2.SetString("-11.01")
+  _, remainder, _ = n3.DivMod(n1, n2)
+  fmt.Printf("divmod(%v, %v) = %v, remainder: %v\n", n1, n2, n3, remainder)
 
-	_, rd, _ = n3.Div(bigfloat.SetInt(1), bigfloat.SetInt(12))
-	fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd))
-	fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd, bigfloat.WithRepeatingOptions("r", "")))
+  _, rd, _ = n3.Div(bigfloat.SetInt(1), bigfloat.SetInt(12))
+  fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd))
+  fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd, bigfloat.WithRepeatingOptions("r", "")))
 }
 ```
 
