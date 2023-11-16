@@ -25,63 +25,62 @@ import (
 )
 
 func main() {
-  n1, _ := bigfloat.SetString("7.005")
-  n2 := bigfloat.SetInt64(4)
-  n3 := &bigfloat.BigFloat{}
+	n1, _ := bigfloat.Set("7.005")
+	n2, _ := bigfloat.Set(4)
+	n3 := bigfloat.New() // zero value is 0
 
-  n3.Add(n1, n2)
-  fmt.Printf("%v + %v = %v\n", n1, n2, n3)
+	n3.Add(n1, n2)
+	fmt.Printf("%v + %v = %v\n", n1, n2, n3)
+  // Output: 7.005 + 4 = 11.005
 
-  n3.Sub(n1, n2)
-  fmt.Printf("%v - %v = %v\n", n1, n2, n3)
+	n3.Sub(n1, n2)
+	fmt.Printf("%v - %v = %v\n", n1, n2, n3)
+  // Output: 7.005 - 4 = 3.005
 
-  n3.Mul(n1, n2)
-  fmt.Printf("%v * %v = %v\n", n1, n2, n3)
+	n3.Mul(n1, n2)
+	fmt.Printf("%v * %v = %v\n", n1, n2, n3)
+  // Output: 7.005 * 4 = 28.020
+
+	n3.Mul(n3.Mul(n3.Sub(n1, n2), n2), n1)
+	fmt.Printf("((%v - %v) * %v) * %v = %v\n", n1, n2, n2, n1, n3)
+  // Output: ((7.005 - 4) * 4) * 7.005 = 84.200100
+
+	n3.Mul(n1, n2).Sub(n3, n1)
+	fmt.Printf("%v * %v - %v = %v\n", n1, n2, n1, n3)
+  // Output: 7.005 * 4 - 7.005 = 21.015
 
   n3.Div(n1, n2)
-  fmt.Printf("%v / %v = %v\n", n1, n2, n3)
+	fmt.Printf("%v / %v = %v\n", n1, n2, n3)
+  // Output: 7.005 / 4 = 1.75125
 
-  d := 4
-  fmt.Printf("round(%v, %v) = %v\n", n3, d, n3.Round(d))
+	d := 4
+	fmt.Printf("round(%v, %v) = ", n3, d)
+	fmt.Printf("%v\n", n3.Round(d))
+  // Output: round(1.75125, 4) = 1.7513
 
-  a := -2
-  b := 11
+	fmt.Printf("trunc(%v) = ", n3)
+	fmt.Printf("%v\n", n3.Trunc())
+  // Output: trunc(1.75130) = 1.00000
 
-  n3.Div(bigfloat.SetInt(a), bigfloat.SetInt(b), bigfloat.WithDivDecimalPlaces(10))
-  fmt.Printf("%v / %v = %v\n", a, b, n3)
+	n1.Set(23)
+	n2.Set(-11)
 
-  _, rd, _ := n3.Div(bigfloat.SetInt(a), bigfloat.SetInt(b))
-  fmt.Printf("%v / %v = %v\n", a, b, bigfloat.StringWithRepeatingDecimals(n3, rd))
+	_, remainder, _ := n3.DivMod(n1, n2)
+	fmt.Printf("%v div %v = %v (remainder: %v)\n", n1, n2, n3, remainder)
+  // Output: 23 div -11 = -2 (remainder: 1)
 
-  fmt.Printf("trunc(%v) = ", n3)
-  n3.Trunc()
-  fmt.Printf("%v\n", n3)
+	n3.Div(n1, n2, bigfloat.WithDivDecimalPlaces(10))
+	fmt.Printf("%v / %v = %v\n", n1, n2, n3)
+  // Output: 23 / -11 = -2.0909090909
 
-  a = 1
-  n1 = bigfloat.SetInt(a).Div10(2)
-  b = 3
+	_, repeatingDecimals, _ := n3.Div(n1, n2)
+	fmt.Printf("%v / %v = %v\n", n1, n2, n3.StringF(repeatingDecimals))
+  // Output: 23 / -11 = -2.(09)
 
-  _, rd, _ = n3.Div(n1, bigfloat.SetInt(b))
-  fmt.Printf("%v / %v = %v\n", n1, b, bigfloat.StringWithRepeatingDecimals(n3, rd))
-
-  a = 23
-  b = -11
-
-  _, remainder, _ := n3.DivMod(bigfloat.SetInt(a), bigfloat.SetInt(b))
-  fmt.Printf("divmod(%v, %v) = %v, remainder: %v\n", a, b, n3, remainder)
-
-  n1.SetString("23.85")
-  n2.SetString("-11.01")
-  _, remainder, _ = n3.DivMod(n1, n2)
-  fmt.Printf("divmod(%v, %v) = %v, remainder: %v\n", n1, n2, n3, remainder)
-
-  _, rd, _ = n3.Div(bigfloat.SetInt(1), bigfloat.SetInt(12))
-  fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd))
-  fmt.Printf("%v / %v = %v\n", 1, 12, bigfloat.StringWithRepeatingDecimals(n3, rd, bigfloat.WithRepeatingOptions("r", "")))
+	fmt.Printf("abs = %v\n", n3.Abs().StringF(repeatingDecimals, bigfloat.WithRepeatingOptions("r", ""), bigfloat.ForceSign(true)))
+  // Output: abs = +2.r09
 }
 ```
-
-TODO: docs
 
 In the addition operation of two numbers, the sign of each addend is important. To reduce complexity and simplify the code, the replacement of addends is used in cases where addition is actually subtraction over zero.
 

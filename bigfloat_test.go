@@ -109,13 +109,7 @@ func TestDiv(t *testing.T) {
 			t.Errorf("Division error %v", errDiv)
 			continue
 		}
-		result = bigfloat.StringWithRepeatingDecimals(n3, repDec)
-		//result = bigfloat.StringWithRepeatingDecimals(n3, repDec, bigfloat.ForceSign(false), bigfloat.WithRepeatingOptions("(", ")"))
-		/* 		if repDec > 0 {
-		   		} else {
-		   			result = n3.String()
-		   		}
-		*/
+		result = n3.StringF(repDec)
 		fmt.Printf("%v\n", result)
 		if len(result) > 100 {
 			fmt.Printf("result len: %v\n", len(result))
@@ -151,14 +145,13 @@ func TestRepeatingDecimals(t *testing.T) {
 		expectedStr := c.expected
 
 		n3 := &bigfloat.BigFloat{}
-		_, repDec, errDiv := n3.Div(n1, n2) //, bigfloat.WithDecimalPlaces(-1))
+		_, repDec, errDiv := n3.Div(n1, n2)
 		if errDiv != nil {
 			fmt.Printf("%v\n", errDiv)
 			t.Errorf("Division error %v", errDiv)
 			continue
 		}
-		result = bigfloat.StringWithRepeatingDecimals(n3, repDec, bigfloat.ForceSign(true), bigfloat.WithRepeatingOptions(c.startIndicator, c.endIndicator))
-		//fmt.Printf("%v\n", n3.String())
+		result = n3.StringF(repDec, bigfloat.ForceSign(true), bigfloat.WithRepeatingOptions(c.startIndicator, c.endIndicator))
 
 		fmt.Printf("%v\n", result)
 		printResult(t, result, expectedStr, errDiv)
@@ -243,12 +236,12 @@ var cases = []struct {
 	{"12.00002", "800.01", "812.01002", "-788.00998", "9600.1360002"},
 	{"800.01", "800.01", "1600.02", "0.00", "640016.0001"},
 	{"800.01", "-800.01", "0.00", "1600.02", "-640016.0001"},
-	{"800.01", "-800.0100", "0.0000", "1600.0200", "-640016.000100"},
-	{"800.0100", "-800.01", "0.0000", "1600.0200", "-640016.000100"},
+	{"800.01", "-800.0100", "0.0000", "1600.0200", "-640016.0001"},
+	{"800.0100", "-800.01", "0.0000", "1600.0200", "-640016.0001"},
 	{"-800.01", "800.01", "0.00", "-1600.02", "-640016.0001"},
 	{"-800.01", "-800.01", "-1600.02", "0.00", "640016.0001"},
-	{"-800.01", "-800.0100", "-1600.0200", "0.0000", "640016.000100"},
-	{"-800.0100", "-800.01", "-1600.0200", "0.0000", "640016.000100"},
+	{"-800.01", "-800.0100", "-1600.0200", "0.0000", "640016.0001"},
+	{"-800.0100", "-800.01", "-1600.0200", "0.0000", "640016.0001"},
 	{"-800.01", "-12.00002", "-812.01002", "-788.00998", "9600.1360002"},
 	{"0.0001", "0.04545", "0.04555", "-0.04535", "0.000004545"},
 }
@@ -266,10 +259,8 @@ func TestAdd(t *testing.T) {
 		expectedStr := c.expectedAdd
 
 		n3 := &bigfloat.BigFloat{}
-		_, err = n3.Add(n1, n2)
-		if err == nil {
-			result = n3.String()
-		}
+		n3.Add(n1, n2)
+		result = n3.String()
 
 		fmt.Printf("%v\n", result)
 		printResult(t, result, expectedStr, err)
@@ -289,10 +280,8 @@ func TestSub(t *testing.T) {
 		expectedStr := c.expectedSub
 
 		n3 := bigfloat.BigFloat{}
-		_, err = n3.Sub(n1, n2)
-		if err == nil {
-			result = n3.String()
-		}
+		n3.Sub(n1, n2)
+		result = n3.String()
 
 		fmt.Printf("%v\n", result)
 		printResult(t, result, expectedStr, err)
@@ -317,6 +306,72 @@ func TestMul(t *testing.T) {
 
 		fmt.Printf("%v\n", result)
 		printResult(t, result, expectedStr, err)
+	}
+}
+
+func TestNew(t *testing.T) {
+	fmt.Printf("\nTestNew...\n")
+	n1 := bigfloat.New()
+	expectedStr := "0"
+	result := n1.String()
+
+	fmt.Printf("%v\n", result)
+	printResult(t, result, expectedStr, nil)
+}
+
+func TestSet(t *testing.T) {
+	var cases = []struct {
+		param    interface{}
+		expected string
+	}{
+		{"-800.00", "-800.00"},
+		{-800, "-800"},
+		{int(-800), "-800"},
+		{int8(-80), "-80"},
+		{int16(-800), "-800"},
+		{int32(-800), "-800"},
+		{int64(-800), "-800"},
+		{bigfloat.SetInt(-800), "-800"},
+		{*(bigfloat.SetInt(-800)), "-800"},
+	}
+	fmt.Printf("\nTestSet...\n")
+	for _, c := range cases {
+		fmt.Printf("set(%v) = ", c.param)
+		n1, err := bigfloat.New().Set(c.param)
+		if err != nil {
+			continue
+		}
+
+		expectedStr := c.expected
+		result := n1.String()
+
+		fmt.Printf("%v\n", result)
+		printResult(t, result, expectedStr, nil)
+	}
+}
+
+func TestNewNumbers(t *testing.T) {
+	var cases = []struct {
+		param    []interface{}
+		expected []string
+	}{
+		{[]interface{}{"-800.00"}, []string{"-800.00"}},
+		{[]interface{}{"-800.00", 1, -2}, []string{"-800.00", "1", "-2"}},
+	}
+	fmt.Printf("\nTestNewNumbers...\n")
+	for _, c := range cases {
+		fmt.Printf("newNumbers(%v) = ", c.param)
+		nArray, errArray := bigfloat.NewNumbers(c.param...)
+		fmt.Printf("%v\n", nArray)
+		fmt.Printf("errors: %v\n", errArray)
+		for i, n := range nArray {
+			if errArray[i] != nil {
+				continue
+			}
+			result := n.String()
+			expectedStr := c.expected[i]
+			printResult(t, result, expectedStr, nil)
+		}
 	}
 }
 
@@ -373,19 +428,17 @@ func TestFrac(t *testing.T) {
 
 func TestTrunc(t *testing.T) {
 	var cases = []struct {
-		param1    string
-		param2    int
-		expected  string
-		wantError bool
+		param1   string
+		param2   int
+		expected string
 	}{
-		{"-800.01", 2, "-800.00", false},
-		{"-800.01", -1, "-800.00", true},
-		{"123.45", 1, "123.0", false},
-		{"-123.45", 1, "-123.0", false},
-		{"-123.45", 2, "-123.00", false},
-		{"-123.45", 3, "-123.000", false},
-		{"-0.45", 3, "0.000", false},
-		{"-0.18", 2, "0.00", false},
+		{"-800.01", 2, "-800.00"},
+		{"123.45", 1, "123.0"},
+		{"-123.45", 1, "-123.0"},
+		{"-123.45", 2, "-123.00"},
+		{"-123.45", 3, "-123.000"},
+		{"-0.45", 3, "0.000"},
+		{"-0.18", 2, "0.00"},
 	}
 	fmt.Printf("\nTestTrunc...\n")
 	for _, c := range cases {
@@ -395,15 +448,7 @@ func TestTrunc(t *testing.T) {
 			continue
 		}
 
-		_, err = n1.Trunc(bigfloat.WithDecimalPlaces(c.param2))
-		if c.wantError {
-			if err == nil {
-				t.Errorf("ERROR: should be error\n")
-			} else {
-				fmt.Printf("OK: ERROR%v\n", err)
-				continue
-			}
-		}
+		n1.Trunc(bigfloat.WithDecimalPlaces(c.param2))
 
 		result := n1.String()
 		expectedStr := c.expected
@@ -675,13 +720,13 @@ func TestRound(t *testing.T) {
 		param2   int
 		expected string
 	}{
-		{"-800.01", 1, "-800.00"},
-		{"-1.55555", 1, "-1.60000"},
+		{"-800.01", 1, "-800.0"},
+		{"-1.55555", 1, "-1.6"},
 		{"1.25", 3, "1.25"},
 		{"1.25", 2, "1.25"},
-		{"1.25", 1, "1.30"},
-		{"0.12", 1, "0.10"},
-		{"-0.02", 1, "0.00"},
+		{"1.25", 1, "1.3"},
+		{"0.12", 1, "0.1"},
+		{"-0.02", 1, "0.0"},
 	}
 	fmt.Printf("\nTestRound...\n")
 	for _, c := range cases {
@@ -919,6 +964,66 @@ func TestErrors(t *testing.T) {
 	}
 }
 
+func TestErrorsOnTrunc(t *testing.T) {
+	cases := []struct {
+		param1 string
+		param2 int
+	}{
+		{"1.1", -1},
+	}
+
+	fmt.Printf("\nTestErrorsOnTrunc...\n")
+	for _, c := range cases {
+		fmt.Printf("trunc(%v, %v) = ", c.param1, c.param2)
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					fmt.Printf("\nOK: panic occurred: %v\n", err)
+				}
+			}()
+			n, err := createBigFloat(nil, c.param1)
+			if err != nil {
+				panic(err)
+			}
+			n.Trunc(bigfloat.WithDecimalPlaces(c.param2))
+			fmt.Printf("%v\n", n.String())
+			errorStr := fmt.Sprintf("%v should raise panic", c)
+			fmt.Printf("\n" + errorStr + "\n")
+			t.Errorf(errorStr)
+		}()
+	}
+}
+
+func TestErrorsOnRound(t *testing.T) {
+	cases := []struct {
+		param1 string
+		param2 int
+	}{
+		{"1.1", -1},
+	}
+
+	fmt.Printf("\nTestErrorsOnRound...\n")
+	for _, c := range cases {
+		fmt.Printf("trunc(%v, %v) = ", c.param1, c.param2)
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					fmt.Printf("\nOK: panic occurred: %v\n", err)
+				}
+			}()
+			n, err := createBigFloat(nil, c.param1)
+			if err != nil {
+				panic(err)
+			}
+			n.Round(c.param2)
+			fmt.Printf("%v\n", n.String())
+			errorStr := fmt.Sprintf("%v should raise panic", c)
+			fmt.Printf("\n" + errorStr + "\n")
+			t.Errorf(errorStr)
+		}()
+	}
+}
+
 func TestErrorsDiv(t *testing.T) {
 	var cases = []struct {
 		param1 string
@@ -989,7 +1094,7 @@ func TestErrorsDivMod(t *testing.T) {
 	}
 }
 
-func TestErrorsStringWithRepeatingDecimals(t *testing.T) {
+func TestErrorsStringF(t *testing.T) {
 	var cases = []struct {
 		param interface{}
 	}{
@@ -999,7 +1104,7 @@ func TestErrorsStringWithRepeatingDecimals(t *testing.T) {
 		{[]byte("abc")},
 	}
 
-	fmt.Printf("\nTestErrorsDivMod...\n")
+	fmt.Printf("\nTestErrorsStringF...\n")
 	for _, c := range cases {
 		fmt.Printf("div(1, 1) = ")
 		n1, n2, err := create2BigFloats(t, "1", "1")
@@ -1019,7 +1124,39 @@ func TestErrorsStringWithRepeatingDecimals(t *testing.T) {
 				panic(err)
 			}
 
-			result := bigfloat.StringWithRepeatingDecimals(n3, repDec, c.param)
+			result := n3.StringF(repDec, c.param)
+			fmt.Printf("%v\n", result)
+
+			errorStr := fmt.Sprintf("%v should raise panic", c)
+			fmt.Printf("\n" + errorStr + "\n")
+			t.Errorf(errorStr)
+		}()
+	}
+}
+
+func TestErrorsOnSet(t *testing.T) {
+	var cases = []struct {
+		param interface{}
+	}{
+		{nil},
+	}
+
+	fmt.Printf("\nTestErrorsOnSet...\n")
+	for _, c := range cases {
+		fmt.Printf("set(%v) = ", c)
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					fmt.Printf("\nOK: panic occurred: %v\n", err)
+				}
+			}()
+
+			n, err := bigfloat.Set(c)
+			if err != nil {
+				panic(err)
+			}
+
+			result := n.String()
 			fmt.Printf("%v\n", result)
 
 			errorStr := fmt.Sprintf("%v should raise panic", c)

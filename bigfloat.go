@@ -1,9 +1,80 @@
-// Copyright 2023 Tihomir Magdic. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/*
+Copyright 2023 Tihomir Magdic. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+*/
 
-// This file implements big float number.
+/*
+Package bigfloat implements big float number functionalities: adding, substraction, multiplication, division, rounding, truncation, converting to/from string, comparison, automatic precision.
 
+Also, supports repeating decimals with various formatting.
+
+BigFloat variables can be declared as:
+
+	n1, _ := bigfloat.Set("7.005")
+	n2, _ := bigfloat.Set(4)
+	n3 := bigfloat.New() // zero value is 0
+
+Operations are implemented as methods:
+
+	n3.Add(n1, n2)
+	n3.Sub(n1, n2)
+	n3.Mul(n1, n2)
+	n3.Div(n1, n2)
+
+Methods of this form typically return the incoming receiver, to enable simple call chaining:
+
+	n3.Mul(n1, n2).Sub(n3, n1)
+
+BigFloat implements stringer so it can be simple printed as:
+
+	fmt.Printf("%v\n", n3)
+
+Division supports remainders:
+
+	n1.Set(23)
+	n2.Set(-11)
+
+	_, remainder, _ := n3.DivMod(n1, n2)
+	fmt.Printf("%v div %v = %v (remainder: %v)\n", n1, n2, n3, remainder)
+
+	// Output: 23 div -11 = -2 (remainder: 1)
+
+The division also supports arbitrary decimals:
+
+	n3.Div(n1, n2, bigfloat.WithDivDecimalPlaces(10))
+	fmt.Printf("%v / %v = %v\n", n1, n2, n3)
+
+	// Output: 23 / -11 = -2.0909090909
+
+Repeating decimals:
+
+	_, repeatingDecimals, _ := n3.Div(n1, n2)
+	fmt.Printf("%v / %v = %v\n", n1, n2, n3.StringF(repeatingDecimals))
+
+	// Output: 23 / -11 = -2.(09)
+
+Repeating decimals with different formatting:
+
+	fmt.Printf("abs = %v\n", n3.Abs().StringF(repeatingDecimals, bigfloat.WithRepeatingOptions("r", ""), bigfloat.ForceSign(true)))
+
+	// Output: abs = +2.r09
+
+Rounding:
+
+	n3.Set("1.75125")
+	d := 4
+	fmt.Printf("%v\n", n3.Round(d))
+
+	// Output: 1.7513
+
+Truncate:
+
+	fmt.Printf("trunc(%v) = ", n3)
+	fmt.Printf("%v\n", n3.Trunc())
+
+	// Output: trunc(1.75130) = 1.00000
+*/
 package bigfloat
 
 import (
@@ -16,6 +87,11 @@ import (
 	"strings"
 )
 
+/*
+Function type for division operation.
+
+See: Div
+*/
 type DivOption func(*divOptionsType)
 
 type divOptionsType struct {
@@ -23,30 +99,50 @@ type divOptionsType struct {
 	maxDecimalPlaces int
 }
 
+/*
+Function defines precision in division operation.
+
+Recommended to use repeating decimals.
+*/
 func WithDivDecimalPlaces(decimalPlaces int) DivOption {
 	return func(ro *divOptionsType) {
 		ro.decimalPlaces = decimalPlaces
 	}
 }
 
+/*
+Function defines maximum decimals in division
+Effective with very long decimals
+*/
 func WithDivMaxDecimalPlaces(maxDecimalPlaces int) DivOption {
 	return func(ro *divOptionsType) {
 		ro.maxDecimalPlaces = maxDecimalPlaces
 	}
 }
 
+/*
+Function type for rounding option.
+*/
 type RoundOption func(*roundOptionsType)
 
 type roundOptionsType struct {
 	decimalPlaces int
 }
 
+/*
+Function defines number of decimal places in rounding
+
+See: Round
+*/
 func WithDecimalPlaces(decimalPlaces int) RoundOption {
 	return func(ro *roundOptionsType) {
 		ro.decimalPlaces = decimalPlaces
 	}
 }
 
+/*
+Function type for repeating options
+*/
 type RepeatingOptions func(*repeatingOptionsType)
 
 type repeatingOptionsType struct {
@@ -54,6 +150,12 @@ type repeatingOptionsType struct {
 	indicatorEnd   string
 }
 
+/*
+Function for repeating options
+
+-indicatorStart is placed before first repeating decimal - default is '('
+-indicatorEnd is placed after last repeating decimal - default is ')'
+*/
 func WithRepeatingOptions(indicatorStart, indicatorEnd string) RepeatingOptions {
 	return func(ro *repeatingOptionsType) {
 		ro.indicatorStart = indicatorStart
@@ -61,8 +163,77 @@ func WithRepeatingOptions(indicatorStart, indicatorEnd string) RepeatingOptions 
 	}
 }
 
+/*
+Basic type for BigFloat number
+*/
 type BigFloat struct {
 	analysis stranalyzer.Analysis
+}
+
+/*
+Creates new BigFloat number with zero value
+*/
+func New() *BigFloat {
+	return &BigFloat{
+		analysis: stranalyzer.Analysis{
+			Norm:     []byte{'0'},
+			Sign:     1,
+			Decimals: 0,
+			Len:      1,
+		},
+	}
+}
+
+/*
+Sets value of BigFloat number based on value and type of input parameter.
+
+For specific type call SetInt64, SetString etc.
+*/
+func (f *BigFloat) Set(arg interface{}) (*BigFloat, error) {
+	var err error
+	switch value := arg.(type) {
+	case string:
+		err = f.SetString(value)
+		return f, err
+	case int:
+		f.SetInt64(int64(value))
+	case int64:
+		f.SetInt64(value)
+	case int8:
+		f.SetInt64(int64(value))
+	case int16:
+		f.SetInt64(int64(value))
+	case int32:
+		f.SetInt64(int64(value))
+	case *BigFloat:
+		f.analysis = value.Copy().analysis
+	case BigFloat:
+		f.analysis = (&value).Copy().analysis
+	default:
+		panic("unknown argument")
+	}
+	return f, err
+}
+
+/*
+Creates new BigFloat number according input parameter's type
+*/
+func Set(arg interface{}) (*BigFloat, error) {
+	return New().Set(arg)
+}
+
+/*
+Creates array of BigFloat number according variadic parameters
+*/
+func NewNumbers(args ...interface{}) ([]*BigFloat, []error) {
+	result := make([]*BigFloat, len(args))
+	errors := make([]error, len(args))
+
+	for i, arg := range args {
+		result[i], errors[i] = Set(arg)
+	}
+
+	return result, errors
 }
 
 type subProduct struct {
@@ -77,23 +248,23 @@ func maxInt(a, b int) int {
 	return b
 }
 
-type Correction struct {
+type correction struct {
 	offset  int
 	reverse int
 }
 
-type Alignment struct {
+type alignment struct {
 	MaxIntLen   int
 	MaxDecLen   int
 	Len         int
-	corrections []Correction
+	corrections []correction
 }
 
 /*
 For internal use
 Reads digit at pos position (from beginning), from f BigFloat, with c correction and fixing retrived digit by adding byteFix
 */
-func read(pos int, f *BigFloat, c *Correction, byteFix int) int {
+func read(pos int, f *BigFloat, c *correction, byteFix int) int {
 	cPos := f.analysis.Len - pos - c.offset - 1 // calculate reading position
 
 	if cPos >= 0 && cPos < f.analysis.Len {
@@ -106,7 +277,7 @@ func read(pos int, f *BigFloat, c *Correction, byteFix int) int {
 For internal use
 Reads digit at pos position (backwards from end), from f BigFloat, with c correction and fixing retrived digit by adding byteFix
 */
-func reverse_read(pos int, f *BigFloat, c *Correction, byteFix int) int {
+func reverse_read(pos int, f *BigFloat, c *correction, byteFix int) int {
 	cPos := pos - c.reverse // calculate reading position
 
 	if cPos >= 0 && cPos < f.analysis.Len {
@@ -115,13 +286,13 @@ func reverse_read(pos int, f *BigFloat, c *Correction, byteFix int) int {
 	return 0
 }
 
-type ReadFnType = func(int, *BigFloat, *Correction, int) int
+type readFnType = func(int, *BigFloat, *correction, int) int
 
 /*
 Reads one digit at pos position for every BigFloat in n array with a alignment
 readFn can be read (from the beginning) or reverse_read (backwards from end)
 */
-func multiRead(pos int, n []*BigFloat, a *Alignment, byteFix int, readFn ReadFnType) []int {
+func multiRead(pos int, n []*BigFloat, a *alignment, byteFix int, readFn readFnType) []int {
 	result := make([]int, len(n))
 	for i := 0; i < len(n); i++ {
 		result[i] = readFn(pos, n[i], &a.corrections[i], byteFix)
@@ -132,7 +303,7 @@ func multiRead(pos int, n []*BigFloat, a *Alignment, byteFix int, readFn ReadFnT
 /*
 Calculate alignment two BigFloat numbers
 */
-func Align(args ...*BigFloat) Alignment {
+func align(args ...*BigFloat) alignment {
 	var maxIntLen, maxDecLen int
 
 	if len(args) > 0 {
@@ -153,16 +324,16 @@ func Align(args ...*BigFloat) Alignment {
 		}
 	}
 
-	c := make([]Correction, len(args))
+	c := make([]correction, len(args))
 
 	for i, arg := range args {
-		c[i] = Correction{
+		c[i] = correction{
 			offset:  arg.analysis.Decimals - maxDecLen,
 			reverse: maxIntLen - (arg.analysis.Len - arg.analysis.Decimals),
 		}
 	}
 
-	return Alignment{
+	return alignment{
 		MaxIntLen:   maxIntLen,
 		MaxDecLen:   maxDecLen,
 		Len:         maxIntLen + maxDecLen,
@@ -172,6 +343,7 @@ func Align(args ...*BigFloat) Alignment {
 
 /*
 Parse string into BigFloat number
+If parsing failed returns error
 */
 func (f *BigFloat) SetString(s string) error {
 	analysis, error := stranalyzer.Analyze(s)
@@ -186,7 +358,8 @@ func (f *BigFloat) SetString(s string) error {
 }
 
 /*
-Create new BigFLoat number from string
+Create new BigFloat number from string
+If parsing failed returns error
 */
 func SetString(s string) (*BigFloat, error) {
 	f := &BigFloat{}
@@ -251,8 +424,9 @@ func reverse(chars []byte) []byte {
 
 /*
 Divides two BigFloat numbers with DivOption:
-decimalPlaces - target decimal places (default is -1 for detecting repeating decimals or remainder 0)
-maxDecimalPlaces - safety parameter for the result of division with a very large number of decimal places (default is 1e4 - 10000)
+
+	decimalPlaces - target decimal places (default is -1 for detecting repeating decimals or remainder 0)
+	maxDecimalPlaces - safety parameter for the result of division with a very large number of decimal places (default is 1e4 - 10000)
 */
 func (f *BigFloat) Div(a, b *BigFloat, options ...DivOption) (*BigFloat, int, error) {
 	r := &BigFloat{}
@@ -363,7 +537,7 @@ func (f *BigFloat) divmod(a, b, remainder *BigFloat, bTrunc bool, options ...Div
 
 		if bDecimals { // calculates map for remainder and number of repeating decimals
 			ind, exists := remIndxMap[string(divPart)]
-			if exists { // exit loop if repeating decimal detected (target decimals calulates after loop exit)
+			if exists { // exit loop if repeating decimal detected (target decimals calculates after loop exit)
 				repDecimalsInd = ind
 				break
 			} else {
@@ -396,7 +570,7 @@ func (f *BigFloat) divmod(a, b, remainder *BigFloat, bTrunc bool, options ...Div
 			divInt = byte(divPart1Int / divPart2Int)                                                        // guess division of two numbers
 		}
 
-		if divInt > 0 { // if division is greater then 0 multiply and substract to calulate remainder
+		if divInt > 0 { // if division is greater then 0 multiply and substract to calculate remainder
 			fProduct := bCopy.Copy()
 			if divInt > 1 { // if division is greater then 1 then multiply
 				fProduct.MulInt64(int64(divInt))
@@ -472,6 +646,9 @@ func (f *BigFloat) divmod(a, b, remainder *BigFloat, bTrunc bool, options ...Div
 	return f, repeatDecimals, nil
 }
 
+/*
+Multiplication of two BigFLoat numbers
+*/
 func (f *BigFloat) Mul(a, b *BigFloat) *BigFloat {
 	if a.IsInt64(0) || b.IsInt64(0) { // check for 0
 		newDecimals := maxInt(a.analysis.Decimals, b.analysis.Decimals)
@@ -550,7 +727,7 @@ func (f *BigFloat) Mul(a, b *BigFloat) *BigFloat {
 	}
 	totalBuf = append(totalBuf, byte(overflow)) // add overflow after loop
 
-	newDecimals := a.analysis.Decimals + b.analysis.Decimals // caluclate number of decimals
+	newDecimals := a.analysis.Decimals + b.analysis.Decimals // calculate number of decimals
 	totalBuf = reverse(totalBuf)                             // reverse digits for display (low digits to the right)
 	if len(totalBuf) > newDecimals {                         // trim leading zeroes
 		iTrim := 0
@@ -563,6 +740,20 @@ func (f *BigFloat) Mul(a, b *BigFloat) *BigFloat {
 		}
 		totalBuf = totalBuf[iTrim:]
 	}
+
+	if newDecimals > 0 { // trim trailing zeroes
+		iTrim := 0
+		for i := 0; i < newDecimals; i++ {
+			if totalBuf[len(totalBuf)-i-1] == 0 {
+				iTrim++
+			} else {
+				break
+			}
+		}
+		totalBuf = totalBuf[:len(totalBuf)-iTrim]
+		newDecimals -= iTrim
+	}
+
 	totalBuf = add(totalBuf, 48) // add 48 to every digit to get ascii numbers
 
 	f.analysis = stranalyzer.Analysis{ // prepare result
@@ -576,7 +767,7 @@ func (f *BigFloat) Mul(a, b *BigFloat) *BigFloat {
 }
 
 /*
-Returns if BigFloat == int64
+Returns if BigFloat equals number n
 */
 func (f *BigFloat) IsInt64(n int64) bool {
 	nFloat := BigFloat{}
@@ -588,6 +779,9 @@ func (f *BigFloat) IsInt64(n int64) bool {
 		(string(f.analysis.Norm) == string(nFloat.analysis.Norm))
 }
 
+/*
+Truncates integer part of number and returns decimals only
+*/
 func (f *BigFloat) Frac() *BigFloat {
 	if (f.analysis.Len - f.analysis.Decimals) > 0 {
 		f.analysis.Norm = append([]byte{'0'}, f.analysis.Norm[f.analysis.Len-f.analysis.Decimals:]...)
@@ -645,7 +839,7 @@ func (f *BigFloat) MulInt64(n int64) *BigFloat {
 Truncate decimals in BigFloat number
 RoundOption defines number of decimals in result
 */
-func (f *BigFloat) Trunc(options ...RoundOption) (*BigFloat, error) {
+func (f *BigFloat) Trunc(options ...RoundOption) *BigFloat {
 	ro := roundOptionsType{
 		decimalPlaces: f.analysis.Decimals,
 	}
@@ -654,7 +848,7 @@ func (f *BigFloat) Trunc(options ...RoundOption) (*BigFloat, error) {
 	}
 
 	if ro.decimalPlaces < 0 {
-		return nil, fmt.Errorf("ERROR: Negative decimal places. Decimal places should be 0 or positive")
+		panic("ERROR: Negative decimal places. Decimal places should be 0 or positive")
 	}
 
 	for i := f.analysis.Len - f.analysis.Decimals; i < f.analysis.Len; i++ { // set '0' as decimals digits
@@ -663,7 +857,7 @@ func (f *BigFloat) Trunc(options ...RoundOption) (*BigFloat, error) {
 
 	f.SetDecimals(ro.decimalPlaces)
 
-	return f, nil
+	return f
 }
 
 /*
@@ -692,9 +886,9 @@ func (f *BigFloat) SetDecimals(n int) *BigFloat {
 Adds two BigFloat numbers
 Warning: Only for numbers with the same sign
 */
-func (f *BigFloat) add(a, b *BigFloat) (*BigFloat, error) {
+func (f *BigFloat) add(a, b *BigFloat) *BigFloat {
 	n := []*BigFloat{a, b}   // array of operands
-	alignment := Align(n...) // calculate alignemnt with decimals
+	alignment := align(n...) // calculate alignemnt with decimals
 
 	var r int
 	overflow := 0
@@ -732,23 +926,35 @@ func (f *BigFloat) add(a, b *BigFloat) (*BigFloat, error) {
 		Sign:     a.analysis.Sign, // same signe of both operands
 	}
 
-	return f, nil
+	return f
 }
 
 /*
 Adds two BigFloat numbers
 
-See table in readme.md for cases when operands are swapped and how result sign is set
+See following table for cases when operands are swapped and how result sign is set
+
+	Addition:
+	| a  |  b  |  a + b | swap |  sign of result  | abs(a) +- abs(b) |
+	|---:|----:|:------:|:----:|:----------------:|:----------------:|
+	| -5 |  -8 | -(5+8) |  no  |     abs bigger   |          5+8     |
+	| -8 |  -5 | -(8+5) |  no  |     abs bigger   |          8+5     |
+	|  5 |  -8 | -(8-5) |  yes |     abs bigger   |          8-5     |
+	| -8 |   5 | -(8-5) |  no  |     abs bigger   |          8-5     |
+	| -5 |   8 |   8-5  |  yes |     abs bigger   |          8-5     |
+	|  8 |  -5 |   8-5  |  no  |     abs bigger   |          8-5     |
+	|  5 |   8 |   5+8  |  no  |     abs bigger   |          5+8     |
+	|  8 |   5 |   8+5  |  no  |     abs bigger   |          8+5     |
 */
-func (f *BigFloat) Add(a, b *BigFloat) (*BigFloat, error) {
+func (f *BigFloat) Add(a, b *BigFloat) *BigFloat {
 	if a.IsInt64(0) { // if 1st operand is 0 then result is 2nd operand (0 + B = B)
 		f.analysis = b.analysis
 
-		return f, nil
+		return f
 	} else if b.IsInt64(0) { // if 2nd operand is 0 then result is 1st operand (A + 0 = A)
 		f.analysis = a.analysis
 
-		return f, nil
+		return f
 	}
 
 	if a.analysis.Sign == b.analysis.Sign { // if both operands have same signs call internal add
@@ -761,7 +967,7 @@ func (f *BigFloat) Add(a, b *BigFloat) (*BigFloat, error) {
 		if cmp == 0 { // if numbers are opposite then result is 0 (A + -A = 0)
 			newDecimals := int(math.Max(float64(a.analysis.Decimals), float64(b.analysis.Decimals)))
 
-			return f.SetInt64(0).SetDecimals(newDecimals), nil
+			return f.SetInt64(0).SetDecimals(newDecimals)
 		} else if cmp < 0 { // if 1st operand is smaller then 2nd then swap operands
 			f1, f2 = f2, f1
 			sign = b.analysis.Sign
@@ -771,7 +977,7 @@ func (f *BigFloat) Add(a, b *BigFloat) (*BigFloat, error) {
 		f.sub(f1, f2) // substract smaller operand from bigger operand
 		f.Sign(sign)  // set result sign
 
-		return f, nil
+		return f
 	}
 }
 
@@ -780,7 +986,7 @@ Internal method for substraction
 */
 func (f *BigFloat) sub(a, b *BigFloat) (*BigFloat, error) {
 	n := []*BigFloat{a, b}   // array of operands
-	alignment := Align(n...) // calculate alignemnt with decimals
+	alignment := align(n...) // calculate alignemnt with decimals
 
 	var diff, overflow int                             // running difference as result and overflow
 	totalBuf := make([]byte, 0, alignment.MaxIntLen+1) // buffer for result digits
@@ -828,17 +1034,29 @@ func (f *BigFloat) sub(a, b *BigFloat) (*BigFloat, error) {
 /*
 Substracts two BigFloat numbers
 
-See table in readme.md for cases when operands are swapped and how result sign is set
+See following table for cases when operands are swapped and how result sign is set
+
+	Subtraction:
+	| a  |   b |  a - b | swap |  sign of result  | abs(a) +- abs(b) |
+	|---:|----:|:------:|:----:|:----------------:|:----------------:|
+	| -5 |  -8 |   8-5  |  yes |      neg 2nd     |       8-5        |
+	| -8 |  -5 | -(8-5) |  no  |        1st       |       8-5        |
+	|  5 |  -8 |   5+8  |  no  |        1st       |       5+8        |
+	| -8 |   5 | -(8+5) |  no  |        1st       |       8+5        |
+	| -5 |   8 | -(5+8) |  no  |        1st       |       5+8        |
+	|  8 |  -5 |   8+5  |  no  |        1st       |       8+5        |
+	|  5 |   8 | -(8-5) |  yes |      neg 2nd     |       8-5        |
+	|  8 |   5 |   8-5  |  no  |        1st       |       8-5        |
 */
-func (f *BigFloat) Sub(a, b *BigFloat) (*BigFloat, error) {
+func (f *BigFloat) Sub(a, b *BigFloat) *BigFloat {
 	if a.IsInt64(0) { // if 1st operand is 0 then result is opposite 2nd operand (0 - B = -B)
 		f.analysis = b.analysis
 
-		return f.Neg(), nil
+		return f.Neg()
 	} else if b.IsInt64(0) { // if 2nd operand is 0 then result is 1st operand (A - 0 = A)
 		f.analysis = a.analysis
 
-		return f, nil
+		return f
 	}
 	f1, f2 := a.Copy(), b.Copy()
 	if a.analysis.Sign != b.analysis.Sign { // if operands have opposite signs
@@ -848,13 +1066,13 @@ func (f *BigFloat) Sub(a, b *BigFloat) (*BigFloat, error) {
 		f.add(f1, f2)
 		f.Sign(sign)
 
-		return f, nil
+		return f
 	} else { // if operands have same signs
 		cmp := a.CompareAbs(b)
 
 		if cmp == 0 { // opposite numbers (A - A = 0 or -A - -A = 0)
 			newDecimals := maxInt(a.analysis.Decimals, b.analysis.Decimals)
-			return f.SetInt64(0).SetDecimals(newDecimals), nil
+			return f.SetInt64(0).SetDecimals(newDecimals)
 		}
 
 		sign := a.analysis.Sign
@@ -867,7 +1085,7 @@ func (f *BigFloat) Sub(a, b *BigFloat) (*BigFloat, error) {
 		f.sub(f1, f2)
 		f.Sign(sign)
 
-		return f, nil
+		return f
 	}
 }
 
@@ -947,7 +1165,7 @@ Internal method for comparing two BigFloat numbers
 func (f *BigFloat) compare(a *BigFloat, abs bool) int {
 	if abs || (f.analysis.Sign == a.analysis.Sign) { // if signs are same or signs are ignored in case of abs == true
 		n := []*BigFloat{f, a}
-		alignment := Align(n...) // calculate decimals aligment
+		alignment := align(n...) // calculate decimals aligment
 
 		var sign int
 		if abs {
@@ -971,14 +1189,19 @@ func (f *BigFloat) compare(a *BigFloat, abs bool) int {
 }
 
 /*
-Rounds n decimals
+Rounds number to n decimals
 */
 func (f *BigFloat) Round(n int) *BigFloat {
+	if n < 0 {
+		panic("Invalid decimal number")
+	}
 	if n < f.analysis.Decimals { // if n decimal for rounding exists
 		pos := f.analysis.Len - f.analysis.Decimals + n // posistion of digit for rounding
 		d := f.analysis.Norm[pos]                       // digit for rounding
-		digits := fill(f.analysis.Len-pos, 48)          // zeroes after rounding digit
-		f.analysis.Norm = append(f.analysis.Norm[:pos], digits...)
+		f.analysis.Len -= f.analysis.Decimals - n       // fix the length
+		f.analysis.Decimals = n                         // fix decimals
+		//digits := fill(f.analysis.Len-pos, 48)          // zeroes after rounding digit
+		f.analysis.Norm = f.analysis.Norm[:pos]
 
 		if d >= '5' { // rounding up
 			c := BigFloat{}        // create new BigFloat number
@@ -1085,12 +1308,22 @@ func SetInt(n int) *BigFloat {
 	return f.SetInt64(int64(n))
 }
 
+/*
+Function type for formatting with StringF
+
+See: StringF
+*/
 type StringOption func(*stringOptionType)
 
 type stringOptionType struct {
 	forceSign bool
 }
 
+/*
+Function defines if sign is forced in formatting or not.
+
+See: StringF
+*/
 func ForceSign(forceSign bool) StringOption {
 	return func(so *stringOptionType) {
 		so.forceSign = forceSign
@@ -1103,6 +1336,40 @@ Optional arg is forceSign for 0 or positive number to force '+' sign
 */
 func (f *BigFloat) String() string {
 	return f.StringWith(ForceSign(false))
+}
+
+/*
+Returns string with repeating decimals and/or StringOption and/or RepeatingOptions
+*/
+func (f *BigFloat) StringF(RepeatingDecimals int, options ...interface{}) string {
+	ro := repeatingOptionsType{
+		indicatorStart: "(",
+		indicatorEnd:   ")",
+	}
+
+	strOptions := make([]StringOption, 0)
+	for _, option := range options {
+		if reflect.TypeOf(option).String() == "bigfloat.RepeatingOptions" {
+			option.(RepeatingOptions)(&ro)
+		} else if reflect.TypeOf(option).String() == "bigfloat.StringOption" {
+			strOptions = append(strOptions, option.(StringOption))
+		} else {
+			panic("wrong input type parameter")
+		}
+	}
+
+	result := f.StringWith(strOptions...)
+
+	if RepeatingDecimals > 0 {
+		var b strings.Builder
+		b.Grow(len(result) + len(ro.indicatorStart) + len(ro.indicatorEnd))
+
+		fmt.Fprintf(&b, "%s%s%s%s", result[:len(result)-RepeatingDecimals], ro.indicatorStart, result[len(result)-RepeatingDecimals:], ro.indicatorEnd)
+
+		return b.String()
+	}
+
+	return result
 }
 
 /*
@@ -1133,39 +1400,4 @@ func (f *BigFloat) StringWith(options ...StringOption) string {
 	}
 
 	return b.String()
-}
-
-/*
-Returns string with repeating decimals
-*/
-func StringWithRepeatingDecimals(f *BigFloat, RepeatingDecimals int, options ...interface{}) string {
-	ro := repeatingOptionsType{
-		indicatorStart: "(",
-		indicatorEnd:   ")",
-	}
-
-	soptions := make([]StringOption, 0)
-	for _, option := range options {
-		//fmt.Printf("%T - %s\n", option, reflect.TypeOf(option))
-		if reflect.TypeOf(option).String() == "bigfloat.RepeatingOptions" {
-			option.(RepeatingOptions)(&ro)
-		} else if reflect.TypeOf(option).String() == "bigfloat.StringOption" {
-			soptions = append(soptions, option.(StringOption))
-		} else {
-			panic("wrong input type parameter")
-		}
-	}
-
-	result := f.StringWith(soptions...)
-
-	if RepeatingDecimals > 0 {
-		var b strings.Builder
-		b.Grow(len(result) + len(ro.indicatorStart) + len(ro.indicatorEnd))
-
-		fmt.Fprintf(&b, "%s%s%s%s", result[:len(result)-RepeatingDecimals], ro.indicatorStart, result[len(result)-RepeatingDecimals:], ro.indicatorEnd)
-
-		return b.String()
-	}
-
-	return result
 }
