@@ -11,8 +11,8 @@ Also, supports repeating decimals with various formatting.
 
 BigFloat variables can be declared as:
 
-	n1, _ := bigfloat.Set("7.005")
-	n2, _ := bigfloat.Set(4)
+	n1, err := bigfloat.Set("7.005")
+	n2 := bigfloat.SetInt(4)
 	n3 := bigfloat.New() // zero value is 0
 
 Operations are implemented as methods:
