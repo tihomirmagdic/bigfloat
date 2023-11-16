@@ -2,9 +2,7 @@
 
 BigFloat implements multi-precision floating-point numbers.
 
-[![codecov](https://codecov.io/gh/tihomirmagdic/bigfloat/graph/badge.svg?token=PTXHUP5GKZ)](https://codecov.io/gh/tihomirmagdic/bigfloat)
-
-[![Go Reference](https://pkg.go.dev/badge/github.com/tihomirmagdic/bigfloat.svg)](https://pkg.go.dev/github.com/tihomirmagdic/bigfloat)
+[![codecov](https://codecov.io/gh/tihomirmagdic/bigfloat/graph/badge.svg?token=PTXHUP5GKZ)](https://codecov.io/gh/tihomirmagdic/bigfloat) [![Go Reference](https://pkg.go.dev/badge/github.com/tihomirmagdic/bigfloat.svg)](https://pkg.go.dev/github.com/tihomirmagdic/bigfloat)
 
 It provides:
 - addition, subtraction, multiplication, division (float and integer with modulus)
