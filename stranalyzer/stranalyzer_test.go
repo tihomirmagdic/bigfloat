@@ -1,8 +1,7 @@
-package stranalyzer_test
+package stranalyzer
 
 import (
 	"fmt"
-	"stranalyzer"
 	"testing"
 )
 
@@ -56,7 +55,7 @@ func TestAnalyze(t *testing.T) {
 		{"1.52e+1", false},
 	}
 	for _, c := range cases {
-		a, error := stranalyzer.Analyze(c.in)
+		a, error := Analyze(c.in)
 		if error != nil {
 			fmt.Printf("%q: error: %s\n", c.in, error)
 		} else {

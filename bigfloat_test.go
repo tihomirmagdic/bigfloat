@@ -1,7 +1,6 @@
 package bigfloat
 
 import (
-	//"bigfloat"
 	"fmt"
 	"strconv"
 	"testing"
