@@ -1,8 +1,8 @@
 package stranalyzer_test
 
 import (
-	"bigfloat/stranalyzer"
 	"fmt"
+	"stranalyzer"
 	"testing"
 )
 

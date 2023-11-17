@@ -1,7 +1,7 @@
-package bigfloat_test
+package bigfloat
 
 import (
-	"bigfloat"
+	//"bigfloat"
 	"fmt"
 	"strconv"
 	"testing"
@@ -11,8 +11,8 @@ func toString(f int64) string {
 	return strconv.FormatInt(f, 10)
 }
 
-func createBigFloat(t *testing.T, s string) (*bigfloat.BigFloat, error) {
-	n := &bigfloat.BigFloat{}
+func createBigFloat(t *testing.T, s string) (*BigFloat, error) {
+	n := &BigFloat{}
 	err := n.SetString(s)
 	if err != nil && t != nil {
 		t.Errorf("ERROR: %q is not valid big float number\n", s)
@@ -20,7 +20,7 @@ func createBigFloat(t *testing.T, s string) (*bigfloat.BigFloat, error) {
 	return n, err
 }
 
-func create2BigFloats(t *testing.T, s1, s2 string) (*bigfloat.BigFloat, *bigfloat.BigFloat, error) {
+func create2BigFloats(t *testing.T, s1, s2 string) (*BigFloat, *BigFloat, error) {
 	n1, err := createBigFloat(t, s1)
 	if err == nil {
 		n2, err := createBigFloat(t, s2)
@@ -102,8 +102,8 @@ func TestDiv(t *testing.T) {
 		var result string
 		expectedStr := c.expected
 
-		n3 := &bigfloat.BigFloat{}
-		_, repDec, errDiv := n3.Div(n1, n2, bigfloat.WithDivDecimalPlaces(c.decimals), bigfloat.WithDivMaxDecimalPlaces(int(1e2)))
+		n3 := &BigFloat{}
+		_, repDec, errDiv := n3.Div(n1, n2, WithDivDecimalPlaces(c.decimals), WithDivMaxDecimalPlaces(int(1e2)))
 		if errDiv != nil {
 			fmt.Printf("%v\n", errDiv)
 			t.Errorf("Division error %v", errDiv)
@@ -144,14 +144,14 @@ func TestRepeatingDecimals(t *testing.T) {
 		var result string
 		expectedStr := c.expected
 
-		n3 := &bigfloat.BigFloat{}
+		n3 := &BigFloat{}
 		_, repDec, errDiv := n3.Div(n1, n2)
 		if errDiv != nil {
 			fmt.Printf("%v\n", errDiv)
 			t.Errorf("Division error %v", errDiv)
 			continue
 		}
-		result = n3.StringF(repDec, bigfloat.ForceSign(true), bigfloat.WithRepeatingOptions(c.startIndicator, c.endIndicator))
+		result = n3.StringF(repDec, ForceSign(true), WithRepeatingOptions(c.startIndicator, c.endIndicator))
 
 		fmt.Printf("%v\n", result)
 		printResult(t, result, expectedStr, errDiv)
@@ -189,7 +189,7 @@ func TestDivMod(t *testing.T) {
 
 		var result string
 
-		n3 := &bigfloat.BigFloat{}
+		n3 := &BigFloat{}
 		_, remainder, errDiv := n3.DivMod(n1, n2)
 		if errDiv != nil {
 			fmt.Printf("%v\n", errDiv)
@@ -258,7 +258,7 @@ func TestAdd(t *testing.T) {
 		var result string
 		expectedStr := c.expectedAdd
 
-		n3 := &bigfloat.BigFloat{}
+		n3 := &BigFloat{}
 		n3.Add(n1, n2)
 		result = n3.String()
 
@@ -279,7 +279,7 @@ func TestSub(t *testing.T) {
 		var result string
 		expectedStr := c.expectedSub
 
-		n3 := bigfloat.BigFloat{}
+		n3 := BigFloat{}
 		n3.Sub(n1, n2)
 		result = n3.String()
 
@@ -300,7 +300,7 @@ func TestMul(t *testing.T) {
 		var result string
 		expectedStr := c.expectedMul
 
-		n3 := bigfloat.BigFloat{}
+		n3 := BigFloat{}
 		n3.Mul(n1, n2)
 		result = n3.String()
 
@@ -311,7 +311,7 @@ func TestMul(t *testing.T) {
 
 func TestNew(t *testing.T) {
 	fmt.Printf("\nTestNew...\n")
-	n1 := bigfloat.New()
+	n1 := New()
 	expectedStr := "0"
 	result := n1.String()
 
@@ -331,13 +331,13 @@ func TestSet(t *testing.T) {
 		{int16(-800), "-800"},
 		{int32(-800), "-800"},
 		{int64(-800), "-800"},
-		{bigfloat.SetInt(-800), "-800"},
-		{*(bigfloat.SetInt(-800)), "-800"},
+		{SetInt(-800), "-800"},
+		{*(SetInt(-800)), "-800"},
 	}
 	fmt.Printf("\nTestSet...\n")
 	for _, c := range cases {
 		fmt.Printf("set(%v) = ", c.param)
-		n1, err := bigfloat.New().Set(c.param)
+		n1, err := New().Set(c.param)
 		if err != nil {
 			continue
 		}
@@ -361,7 +361,7 @@ func TestNewNumbers(t *testing.T) {
 	fmt.Printf("\nTestNewNumbers...\n")
 	for _, c := range cases {
 		fmt.Printf("newNumbers(%v) = ", c.param)
-		nArray, errArray := bigfloat.NewNumbers(c.param...)
+		nArray, errArray := NewNumbers(c.param...)
 		fmt.Printf("%v\n", nArray)
 		fmt.Printf("errors: %v\n", errArray)
 		for i, n := range nArray {
@@ -448,7 +448,7 @@ func TestTrunc(t *testing.T) {
 			continue
 		}
 
-		n1.Trunc(bigfloat.WithDecimalPlaces(c.param2))
+		n1.Trunc(WithDecimalPlaces(c.param2))
 
 		result := n1.String()
 		expectedStr := c.expected
@@ -870,7 +870,7 @@ func TestSetString(t *testing.T) {
 	fmt.Printf("\nTestSetString...\n")
 	for _, c := range cases {
 		fmt.Printf("SetString(%v) = ", c.param)
-		n1, err := bigfloat.SetString(c.param)
+		n1, err := SetString(c.param)
 		if err != nil {
 			t.Errorf("ERROR: %q is not valid big float number\n", err)
 			continue
@@ -898,7 +898,7 @@ func TestSetInt64(t *testing.T) {
 	fmt.Printf("\nTestSetInt64...\n")
 	for _, c := range cases {
 		fmt.Printf("SetInt64(%v) = ", c.param)
-		n1 := bigfloat.SetInt64(c.param)
+		n1 := SetInt64(c.param)
 
 		expectedStr := c.expected
 		result := n1.String()
@@ -922,7 +922,7 @@ func TestSetInt(t *testing.T) {
 	fmt.Printf("\nTestSetInt64...\n")
 	for _, c := range cases {
 		fmt.Printf("SetInt(%v) = ", c.param)
-		n1 := bigfloat.SetInt(c.param)
+		n1 := SetInt(c.param)
 
 		expectedStr := c.expected
 		result := n1.String()
@@ -985,7 +985,7 @@ func TestErrorsOnTrunc(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			n.Trunc(bigfloat.WithDecimalPlaces(c.param2))
+			n.Trunc(WithDecimalPlaces(c.param2))
 			fmt.Printf("%v\n", n.String())
 			errorStr := fmt.Sprintf("%v should raise panic", c)
 			fmt.Printf("\n" + errorStr + "\n")
@@ -1046,7 +1046,7 @@ func TestErrorsDiv(t *testing.T) {
 				}
 			}()
 
-			n3 := &bigfloat.BigFloat{}
+			n3 := &BigFloat{}
 			_, _, err := n3.Div(n1, n2)
 			if err != nil {
 				panic(err)
@@ -1081,7 +1081,7 @@ func TestErrorsDivMod(t *testing.T) {
 				}
 			}()
 
-			n3 := &bigfloat.BigFloat{}
+			n3 := &BigFloat{}
 			_, _, err := n3.DivMod(n1, n2)
 			if err != nil {
 				panic(err)
@@ -1118,7 +1118,7 @@ func TestErrorsStringF(t *testing.T) {
 				}
 			}()
 
-			n3 := &bigfloat.BigFloat{}
+			n3 := &BigFloat{}
 			_, repDec, err := n3.Div(n1, n2)
 			if err != nil {
 				panic(err)
@@ -1151,7 +1151,7 @@ func TestErrorsOnSet(t *testing.T) {
 				}
 			}()
 
-			n, err := bigfloat.Set(c)
+			n, err := Set(c)
 			if err != nil {
 				panic(err)
 			}

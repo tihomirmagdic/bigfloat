@@ -78,11 +78,11 @@ Truncate:
 package bigfloat
 
 import (
-	"bigfloat/stranalyzer"
 	"bytes"
 	"fmt"
 	"math"
 	"reflect"
+	"stranalyzer"
 	"strconv"
 	"strings"
 )
